@@ -1,0 +1,81 @@
+{% load static %}
+<style>
+    #search-logo {
+        width: 375px;
+        height: 150px;
+    }
+
+    .form-floating {
+        position: relative;
+    }
+
+    .fa-search {
+        color: #9ca3af;
+    }
+
+    .form-floating .fa-search {
+        position: absolute;
+        top: 22px;
+        left: 16px;
+        color: #9ca3af;
+    }
+
+    label {
+        margin-left: 33px;
+    }
+
+    .form-input {
+        text-indent: 33px;
+    }
+</style>
+<div class="container">
+    <div class="row justify-content-center my-5">
+        <img src="{% static 'images/logo_home.jpeg' %}" id="search-logo"/>
+    </div>
+    <div class="row d-flex justify-content-center">
+        <div class="col-md-4">
+            <div class="form-floating">
+                <i class="fa fa-search"></i>
+                <input type="text" id="search-input" class="form-control form-input" placeholder="Ticker" maxlength="26">
+                <label for="search-input">Ticker</label>
+            </div>
+        </div>
+    </div>
+    <div class="row d-flex justify-content-center">
+        <div class="col-md-4 list-group" id="search-results" style="padding-left: 12px">
+        </div>
+    </div>
+</div>
+<script defer>
+    let search_box = document.getElementById("search-input");
+    search_box.addEventListener("keyup", function (e) {
+        let display_area = document.getElementById("search-results");
+        display_area.innerHTML = "";
+
+        // If the text is empty, skip to fetch information
+        if (e.target.value === "") {
+            return;
+        }
+
+        fetch('{% url 'chart:ticker' %}')
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('400 아니면 500 에러남.');
+                }
+                return response.json();
+            })
+            .then((suggestions) => {
+                let tickers = suggestions['tickers'];
+
+                display_area.innerHTML = "";
+
+                tickers.forEach(element => {
+                    display_area.insertAdjacentHTML("beforeend",
+                        `<button type="button" class="list-group-item list-group-item-action">
+                            <i class="fa fa-search"></i>
+                            <span style="margin-left: 8px;">${element}</span>
+                         </button>`);
+                });
+            });
+    });
+</script>

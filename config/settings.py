@@ -46,7 +46,7 @@ else:
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
-DEBUG = False
+DEBUG = not IS_HEROKU
 
 if IS_HEROKU:
     ALLOWED_HOSTS = ["*"]

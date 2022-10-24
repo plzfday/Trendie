@@ -1,5 +1,71 @@
 {% extends 'base.html' %}
 
 {% block contents %}
-    {% include 'chart/landing_page.html' %}
+{% load static %}
+<div class="container">
+    <div class="row justify-content-center my-5">
+        <img src="{% static 'images/logo_home.jpeg' %}" id="search-logo" />
+    </div>
+    <div class="row d-flex justify-content-center">
+        <div class="col-md-4">
+            <div class="form-floating">
+                <i class="fa fa-search"></i>
+                <input type="text" id="search-input" class="form-control form-input" placeholder="Ticker"
+                    maxlength="26">
+                <label id="ticker_label" for="search-input">Ticker</label>
+            </div>
+        </div>
+    </div>
+    <div class="row d-flex justify-content-center">
+        <div class="col-md-4 list-group" id="search-results" style="padding-left: 12px">
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    let search_box = document.getElementById("search-input");
+    search_box.addEventListener("keyup", function (e) {
+        let display_area = document.getElementById("search-results");
+        display_area.innerHTML = "";
+
+        // If the text is empty, skip to fetch information
+        if (e.target.value === "") {
+            return;
+        }
+
+        let search_text = e.target.value.toUpperCase();
+
+        // TODO: 전체 리스트를 받아오는 거에서 검색하는 걸로 바꿔야 함
+        fetch("{% url 'chart:ticker' %}")
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('400 아니면 500 에러남.');
+                }
+                return response.json();
+            })
+            .then((suggestions) => {
+                let tickers = suggestions['tickers'];
+
+                display_area.innerHTML = "";
+
+                tickers.forEach(element => {
+                    for (let i = 0; i < search_text.length; i++) {
+                        if (element[i] !== search_text[i]) {
+                            return;
+                        }
+                    }
+                    // The 11111 works as a placeholder for the ticker
+                    // Cannot identify how this works internally
+                    let url = "{% url 'chart:inquiry' 11111 %}".replace('/11111/', '/' + element);
+                    display_area.insertAdjacentHTML("beforeend",
+                        `<a type="button" href="${url}" class="list-group-item list-group-item-action">
+                            <i class="fa fa-search"></i>
+                            <span style="margin-left: 8px;">${element}</span>
+                        </a>`);
+                });
+            });
+    });
+</script>
 {% endblock %}

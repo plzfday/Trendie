@@ -1,3 +1,9 @@
 from django.db import models
 
-# Create your models here.
+
+class Ticker(models.Model):
+    ticker = models.CharField(max_length=6)
+    keywords = models.CharField(max_length=40)
+
+    def __str__(self):
+        return self.ticker

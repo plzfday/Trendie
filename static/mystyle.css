@@ -1,0 +1,27 @@
+#search-logo {
+    width: 375px;
+    height: 150px;
+}
+
+.form-floating {
+    position: relative;
+}
+
+.fa-search {
+    color: #9ca3af;
+}
+
+.form-floating .fa-search {
+    position: absolute;
+    top: 22px;
+    left: 16px;
+    color: #9ca3af;
+}
+
+#ticker_label {
+    margin-left: 33px;
+}
+
+.form-input {
+    text-indent: 33px;
+}

@@ -1,31 +1,48 @@
-import base64
-import io
 import json
 
-import matplotlib as mpl
-import matplotlib.pyplot as plt
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+
+from .forms import TickerForm
+from .graph import get_stock_data
+from .models import Ticker
 
 
 def index(request):
-    return render(request, 'chart/index.html')
+    return render(request, "chart/index.html")
 
 
-def inquiry(request):
-    mpl.use('Agg')
-    fig, ax = plt.subplots(figsize=(5, 5))
-    ax.plot([1, 2, 3, 4, 5, 6, 7, 8, 9])
+def inquiry(request, ticker):
+    duration = request.GET.get("duration", "5Y")
 
-    fig_file = io.BytesIO()
-    fig.savefig(fig_file, format='png')
-    b64 = base64.b64encode(fig_file.getvalue()).decode()
+    if duration not in ["5Y", "1.5Y", "VS19", "9M"]:
+        duration = "5Y"
 
-    context = {'graph': b64}
+    topics = list(Ticker.objects.filter(ticker__exact=ticker)
+                  .values_list('keywords', flat=True))
 
-    return render(request, 'chart/chart.html', context)
+    graphs, names = get_stock_data(ticker, duration, topics)
+    context = {"graphs": zip(graphs, names)}
+
+    return render(request, "chart/chart.html", context)
+
+
+def keywords(request):
+    if request.method == "POST":
+        form = TickerForm(request.POST)
+        if form.is_valid():
+            form.save(commit=True)
+            return redirect("chart:index")
+    else:
+        return render(request, "chart/keyword.html")
 
 
 def find_ticker(request):
-    if request.method == 'GET':
-        return HttpResponse(json.dumps({'tickers': ['APPL', 'AMZN']}), content_type='application/json')
+    if request.method == "GET":
+        tickers = Ticker.objects.all() \
+            .values_list('ticker', flat=True) \
+            .distinct()
+
+        return HttpResponse(
+            json.dumps({"tickers": list(tickers)}), content_type="application/json"
+        )

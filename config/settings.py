@@ -10,12 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
-import json
-import os
 from pathlib import Path
-
-import dj_database_url
-from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,41 +18,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
-IS_HEROKU = "DYNO" in os.environ
-
-if not IS_HEROKU:
-    secret_file = os.path.join(BASE_DIR, 'secrets.json')
-
-    with open(secret_file) as f:
-        secrets = json.loads(f.read())
-
-
-    def get_secret(setting, secret=secrets):
-        try:
-            return secret[setting]
-        except KeyError:
-            error_msg = "Set the {} environment variable".format(setting)
-            raise ImproperlyConfigured(error_msg)
-
-
-    SECRET_KEY = get_secret("SECRET_KEY")
-else:
-    SECRET_KEY = os.environ["SECRET_KEY"]
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = "django-insecure-f3*y&$w383_3^ec(28q0(6x@nm^$lv=f%bk2a&6-72+o_&qrjs"
 
 # SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = False
 
-DEBUG = not IS_HEROKU
-
-if IS_HEROKU:
-    ALLOWED_HOSTS = ["*"]
-else:
-    ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["127.0.0.1"]
 
 # Application definition
 
 INSTALLED_APPS = [
     "chart",
-    "corsheaders",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -68,14 +40,12 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"
@@ -108,9 +78,6 @@ DATABASES = {
     }
 }
 
-db_from_env = dj_database_url.config(conn_max_age=500)
-DATABASES['default'].update(db_from_env)
-
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 
@@ -129,8 +96,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-CSRF_COOKIE_SECURE = True
-
 # Internationalization
 # https://docs.djangoproject.com/en/4.1/topics/i18n/
 
@@ -145,14 +110,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 STATIC_URL = "static/"
-
 STATICFILES_DIRS = [
     BASE_DIR / "static",
 ]
-
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field

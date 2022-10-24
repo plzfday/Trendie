@@ -10,9 +10,12 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 
+import json
 import os
 from pathlib import Path
+
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,8 +25,22 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 IS_HEROKU = "DYNO" in os.environ
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+secret_file = os.path.join(BASE_DIR, 'secrets.json')  # secrets.json 파일 위치를 명시
+
+with open(secret_file) as f:
+    secrets = json.loads(f.read())
+
+
+def get_secret(setting, secret=secrets):
+    """비밀 변수를 가져오거나 명시적 예외를 반환한다."""
+    try:
+        return secret[setting]
+    except KeyError:
+        error_msg = "Set the {} environment variable".format(setting)
+        raise ImproperlyConfigured(error_msg)
+
+
+SECRET_KEY = get_secret("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 

@@ -32,12 +32,12 @@ def get_stock_data(ticker, duration, topics):
         pytrend.build_payload([kw_list[i]], timeframe=timeframe, geo='US')
         trend = pytrend.interest_over_time()
         trend = trend.drop(columns=['isPartial'])
+        trend = trend.dropna().replace(0, 1)
 
         trend_ma = trend.rolling(window=10).mean()
-        trend_ma = trend_ma.dropna()
-        trend_ma = trend_ma.replace(0, 0.1)
+        trend_ma = trend_ma.dropna().replace(0, 1)
 
-        trend_ma_yoy = (trend_ma - trend_ma.shift(52)) / trend_ma * 100
+        trend_ma_yoy = (trend_ma - trend_ma.shift(52)) / trend_ma.shift(52) * 100
 
         data = {"record": record.iloc[:, -1],
                 "trend_ma_yoy": trend_ma_yoy.iloc[:, 0],
@@ -80,6 +80,7 @@ def plot(data):
     ax2 = ax.twinx()
     ax2.plot(data["trend_ma_yoy"].index, data["trend_ma_yoy"], color="gold")
 
+    # ax2.set_ylim(-150, 150)
     ax2.set_ylim(data["trend_ma_yoy"].min(), data["trend_ma_yoy"].max())
     plt.tight_layout()
 

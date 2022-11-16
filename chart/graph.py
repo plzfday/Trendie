@@ -4,7 +4,6 @@ import io
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import pandas
 import pandas_datareader.data as web
 import yfinance as yf
 from dateutil.relativedelta import relativedelta
@@ -30,11 +29,14 @@ def get_stock_data(ticker, duration, topics):
     names = list()
 
     for i in range(len(kw_list)):
-        pytrend.build_payload([kw_list[i]], timeframe=timeframe)
+        pytrend.build_payload([kw_list[i]], timeframe=timeframe, geo='US')
         trend = pytrend.interest_over_time()
         trend = trend.drop(columns=['isPartial'])
 
         trend_ma = trend.rolling(window=10).mean()
+        trend_ma = trend_ma.dropna()
+        trend_ma = trend_ma.replace(0, 0.1)
+
         trend_ma_yoy = (trend_ma - trend_ma.shift(52)) / trend_ma * 100
 
         data = {"record": record.iloc[:, -1],
@@ -78,8 +80,7 @@ def plot(data):
     ax2 = ax.twinx()
     ax2.plot(data["trend_ma_yoy"].index, data["trend_ma_yoy"], color="gold")
 
-    ax2.set_ylim(data["trend_ma_yoy"].min() - abs(data["trend_ma_yoy"].min()) * .1,
-                 data["trend_ma_yoy"].max() + abs(data["trend_ma_yoy"].max()) * .1)
+    ax2.set_ylim(data["trend_ma_yoy"].min(), data["trend_ma_yoy"].max())
     plt.tight_layout()
 
     fig_file = io.BytesIO()

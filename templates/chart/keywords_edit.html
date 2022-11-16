@@ -3,7 +3,7 @@
 <div class="container mt-3 col-4">
     <form method="post" action="{% url 'chart:keywords_edit_complete' %}">
         {% csrf_token %}
-        <label class="form-label">Keywords</label>
+        <label class="form-label">{{ ticker }}</label>
         <input type="hidden" name="ticker" value="{{ ticker }}">
         <div class="mb-3">
             {% for keyword in keywords %}

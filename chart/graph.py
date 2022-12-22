@@ -1,45 +1,51 @@
 import base64
 import datetime
 import io
+import pandas as pd
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas_datareader.data as web
-import yfinance as yf
 from dateutil.relativedelta import relativedelta
 from pytrends.request import TrendReq
+
+from .models import Company
 
 
 def get_stock_data(ticker, duration, topics):
     mpl.use("Agg")
     today = datetime.date.today()
     start = calc_start_date(today, duration)
+    yearforyoy = start + relativedelta(years=-1)
 
-    name = get_title(ticker)
-
-    # Google Trends search
-    kw_list = topics
-    timeframe = start.strftime("%Y-%m-%d") + " " + today.strftime("%Y-%m-%d")
-    pytrend = TrendReq()
-
-    record = web.DataReader(ticker, "yahoo", start, today)
-    record = (record - record.min()) / (record.max() - record.min()) * 100
+    stock = web.DataReader(ticker, "yahoo", start, today)
+    stock = (stock - stock.min()) / (stock.max() - stock.min()) * 100
 
     graphs = list()
     names = list()
+    pytrend = TrendReq(timeout=(10, 25))
+    name = get_title(ticker)
+    kw_list = topics
+    tf = start.strftime("%Y-%m-%d") + " " + today.strftime("%Y-%m-%d")
+    tf_yoy = yearforyoy.strftime("%Y-%m-%d") + " " + start.strftime("%Y-%m-%d")
 
     for i in range(len(kw_list)):
-        pytrend.build_payload([kw_list[i]], timeframe=timeframe, geo='US')
-        trend = pytrend.interest_over_time()
-        trend = trend.drop(columns=['isPartial'])
-        trend = trend.dropna().replace(0, 1)
+        pytrend.build_payload([kw_list[i]], timeframe=tf, geo='US')
+
+        trend = pytrend.interest_over_time().drop(columns=['isPartial'])
+        trend = handle_blank(trend)
+
+        pytrend.build_payload([kw_list[i]], timeframe=tf_yoy, geo='US')
+        trend_yoy = pytrend.interest_over_time().drop(columns=['isPartial'])
+        trend_yoy = pd.concat([trend_yoy, trend])
+        yoy_ma = trend_yoy.rolling(window=10).mean()
+        yoy_ma = handle_blank(yoy_ma)
+        trend_ma_yoy = calc_yoy(yoy_ma)
 
         trend_ma = trend.rolling(window=10).mean()
-        trend_ma = trend_ma.dropna().replace(0, 1)
+        trend_ma = handle_blank(trend_ma)
 
-        trend_ma_yoy = (trend_ma - trend_ma.shift(52)) / trend_ma.shift(52) * 100
-
-        data = {"record": record.iloc[:, -1],
+        data = {"record": stock.iloc[:, -1],
                 "trend_ma_yoy": trend_ma_yoy.iloc[:, 0],
                 "trend_ma": trend_ma.iloc[:, 0],
                 "trend": trend.iloc[:, 0]}
@@ -50,8 +56,16 @@ def get_stock_data(ticker, duration, topics):
     return graphs, names
 
 
+def handle_blank(data):
+    return data.dropna().replace(0, 1)
+
+
+def calc_yoy(data):
+    return (data - data.shift(52)) / data.shift(52) * 100
+
+
 def get_title(ticker):
-    company_name = yf.Ticker(ticker).info["shortName"]
+    company_name = Company.objects.get(ticker=ticker).name
     return f"{ticker} ({company_name})"
 
 
@@ -80,8 +94,9 @@ def plot(data):
     ax2 = ax.twinx()
     ax2.plot(data["trend_ma_yoy"].index, data["trend_ma_yoy"], color="gold")
 
-    # ax2.set_ylim(-150, 150)
-    ax2.set_ylim(data["trend_ma_yoy"].min(), data["trend_ma_yoy"].max())
+    ylim_low = data["trend_ma_yoy"].min()
+    ylim_hi = data["trend_ma_yoy"].max()
+    ax2.set_ylim(ylim_low, ylim_hi)
     plt.tight_layout()
 
     fig_file = io.BytesIO()

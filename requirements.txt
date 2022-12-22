@@ -15,9 +15,11 @@ multitasking==0.0.11
 numpy==1.23.4
 packaging==21.3
 pandas==1.5.1
-pandas-datareader==0.10.0
+pandas-datareader==0+untagged.811.gea66d6b
 Pillow==9.2.0
 pycodestyle==2.10.0
+pycryptodome==3.16.0
+pycryptodomex==3.16.0
 pyparsing==3.0.9
 python-dateutil==2.8.2
 pytrends==4.8.0
@@ -28,4 +30,3 @@ sqlparse==0.4.3
 tomli==2.0.1
 urllib3==1.26.12
 whitenoise==6.2.0
-yfinance==0.1.81

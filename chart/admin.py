@@ -1,10 +1,10 @@
 from django.contrib import admin
 
-from .models import Ticker
+from .models import Keyword
 
 
-class TickerAdmin(admin.ModelAdmin):
+class KeywordAdmin(admin.ModelAdmin):
     search_fields = ['ticker']
 
 
-admin.site.register(Ticker, TickerAdmin)
+admin.site.register(Keyword, KeywordAdmin)

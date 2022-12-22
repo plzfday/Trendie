@@ -7,7 +7,7 @@
             <form method="post" action="{% url 'chart:keywords_edit' %}" class="mb-3">
                 {% csrf_token %}
                 <label class="form-label">List of Tickers</label>
-                <select class="form-select mb-3" name="ticker">
+                <select class="form-select mb-3" name="ticker" required>
                     {% for ticker in tickers %}
                         <option value="{{ ticker }}">{{ ticker }}</option>
                     {% endfor %}

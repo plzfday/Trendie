@@ -2,6 +2,7 @@ import json
 import urllib
 
 from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_protect
 from django.shortcuts import render, redirect
 
 from .graph import get_stock_data
@@ -12,6 +13,7 @@ def index(request):
     return render(request, "chart/index.html")
 
 
+@csrf_protect
 def inquiry(request, ticker):
     DEFAULT_DURATION = "5Y"
     duration = request.GET.get("duration", DEFAULT_DURATION)
@@ -35,6 +37,7 @@ def fetch_name_from_ticker(ticker):
     return data
 
 
+@csrf_protect
 def keywords(request):
     if request.method == "POST":
         ticker = request.POST.get("ticker")
@@ -52,6 +55,7 @@ def keywords(request):
         return render(request, "chart/keyword.html", context)
 
 
+@csrf_protect
 def keywords_edit(request):
     ticker = request.POST.get("ticker")
     kws = Company.objects.get(ticker=ticker) \
@@ -60,6 +64,7 @@ def keywords_edit(request):
     return render(request, "chart/keywords_edit.html", context)
 
 
+@csrf_protect
 def keywords_edit_complete(request):
     ticker = request.POST.get("ticker")
     kws = request.POST.getlist("keywords")

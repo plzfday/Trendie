@@ -1,3 +1,3 @@
 from .base import *
 
-ALLOWED_HOSTS = ["trendie.site"]
+ALLOWED_HOSTS = ["localhost", "trendie.site"]

@@ -83,6 +83,7 @@ def calc_start_date(today, duration):
 
 def plot(data):
     fig, ax = plt.subplots(figsize=(6, 4))
+    fig.autofmt_xdate(rotation=45)
 
     ax.plot(data["trend"].index, data["trend"], color="mediumslateblue")
     ax.plot(data["trend_ma"].index, data["trend_ma"], color="red")

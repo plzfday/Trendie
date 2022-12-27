@@ -82,3 +82,7 @@ def find_ticker(request):
 
 def get_all_tickers():
     return Company.objects.values_list("ticker", flat=True)
+
+
+def page_not_found(request, exception):
+    return render(request, "chart/404.html", {})

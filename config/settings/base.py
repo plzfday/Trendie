@@ -25,8 +25,11 @@ SECRET_KEY = os.environ['SECRET_KEY']
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ["localhost", "trendie.site"]
-CSRF_TRUSTED_ORIGINS = ['http://trendie.site']
+ALLOWED_HOSTS = []
+CSRF_TRUSTED_ORIGINS = ['http://trendie.site', 'https://trendie.site']
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
 
 # Application definition
 

@@ -31,8 +31,6 @@ def fetch_stock_data_normalized(ticker, date_range):
         stock = web.DataReader(ticker, "yahoo", *date_range)
         stock = stock.iloc[:, -1]
 
-    print(stock)
-    print(stock.max(), stock.min())
     return (stock - stock.min()) / (stock.max() - stock.min()) * 100
 
 

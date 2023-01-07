@@ -4,7 +4,7 @@ import urllib
 from django.http import HttpResponse
 from django.shortcuts import render, redirect
 
-from .graph import get_stock_data
+from .graph import NoDataError, get_graph
 from .models import Company
 
 
@@ -19,7 +19,12 @@ def inquiry(request, ticker):
     topics = list(Company.objects.get(
         ticker=ticker).keyword_set.values_list('keyword', flat=True))
 
-    graphs, names = get_stock_data(ticker, duration, topics)
+    try:
+        graphs, names = get_graph(ticker, duration, topics)
+    except RuntimeError:
+        return HttpResponse("Google Trends returned 429 error. Please refresh the page (F5).")
+    except NoDataError as e:
+        return HttpResponse(f"{e}<br>Go <a href='/'>Home</a>")
     context = {"graphs": zip(graphs, names)}
 
     return render(request, "chart/chart.html", context)

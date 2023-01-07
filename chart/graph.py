@@ -1,57 +1,96 @@
 import base64
-import datetime
 import io
 import pandas as pd
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas_datareader.data as web
+
+from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from pytrends.request import TrendReq
+from pytrends.exceptions import ResponseError
 
 from .models import Company
 
 
-def get_stock_data(ticker, duration, topics):
-    mpl.use("Agg")
-    today = datetime.date.today()
-    start = calc_start_date(today, duration)
-    yearforyoy = start + relativedelta(years=-1)
+class NoDataError(Exception):
+    pass
 
-    stock = web.DataReader(ticker, "yahoo", start, today)
-    stock = (stock - stock.min()) / (stock.max() - stock.min()) * 100
 
-    graphs = list()
-    names = list()
+def format_date(start, end):
+    format = "%Y-%m-%d"
+    return f"{start.strftime(format)} {end.strftime(format)}"
+
+
+def fetch_stock_data_normalized(ticker, date_range):
+    if ticker.endswith(".KS"):
+        stock = web.DataReader(ticker[:-3], "naver", *date_range)
+        stock = stock.iloc[:, -2].astype("int")
+    else:
+        stock = web.DataReader(ticker, "yahoo", *date_range)
+        stock = stock.iloc[:, -1]
+
+    print(stock)
+    print(stock.max(), stock.min())
+    return (stock - stock.min()) / (stock.max() - stock.min()) * 100
+
+
+def fetch_from_google_trend(date_range, topics, duration: str):
     pytrend = TrendReq(timeout=(10, 25))
+    year_ahead = date_range[0] + relativedelta(years=-1)
+
+    tf = format_date(year_ahead, date_range[1])
+
+    yoy_offset = 52
+    ma_offset = 10
+    if duration == "5Y":
+        yoy_offset = 12
+        ma_offset = 2
+
+    data = []
+
+    for topic in topics:
+        pytrend.build_payload([topic], timeframe=tf, geo='US')
+
+        try:
+            trend = handle_blank(pytrend.interest_over_time())
+        except ResponseError:
+            raise RuntimeError("Google returned 429")
+
+        if trend.empty:
+            raise NoDataError(
+                f"Keyword <b>{topic}</b> doesn't have enough data. Use another keyword.")
+
+        trend_ma = handle_blank(trend.rolling(window=ma_offset).mean())
+        trend_ma_yoy = calc_yoy(trend_ma, yoy_offset - ma_offset + 1)
+
+        data.append({"trend_ma_yoy": trend_ma_yoy.iloc[:, 0],
+                     "trend_ma": trend_ma.iloc[yoy_offset - ma_offset + 1:, 0],
+                     "trend": trend.iloc[yoy_offset:, 0]})
+
+    return data
+
+
+def get_graph(ticker, duration, topics):
+    mpl.use("Agg")
+    today = datetime.today()
+    start = calc_start_date(today, duration)
+
     name = get_title(ticker)
-    kw_list = topics
-    tf = start.strftime("%Y-%m-%d") + " " + today.strftime("%Y-%m-%d")
-    tf_yoy = yearforyoy.strftime("%Y-%m-%d") + " " + start.strftime("%Y-%m-%d")
+    graphs, names = [], []
 
-    for i in range(len(kw_list)):
-        pytrend.build_payload([kw_list[i]], timeframe=tf, geo='US')
+    stock = fetch_stock_data_normalized(ticker, (start, today))
 
-        trend = pytrend.interest_over_time().drop(columns=['isPartial'])
-        trend = handle_blank(trend)
+    try:
+        data = fetch_from_google_trend((start, today), topics, duration)
+    except (ResponseError, NoDataError) as e:
+        raise e
 
-        pytrend.build_payload([kw_list[i]], timeframe=tf_yoy, geo='US')
-        trend_yoy = pytrend.interest_over_time().drop(columns=['isPartial'])
-        trend_yoy = pd.concat([trend_yoy, trend])
-        yoy_ma = trend_yoy.rolling(window=10).mean()
-        yoy_ma = handle_blank(yoy_ma)
-        trend_ma_yoy = calc_yoy(yoy_ma)
-
-        trend_ma = trend.rolling(window=10).mean()
-        trend_ma = handle_blank(trend_ma)
-
-        data = {"record": stock.iloc[:, -1],
-                "trend_ma_yoy": trend_ma_yoy.iloc[:, 0],
-                "trend_ma": trend_ma.iloc[:, 0],
-                "trend": trend.iloc[:, 0]}
-
-        graphs.append(plot(data))
-        names.append(f"{name} / {kw_list[i]}")
+    for i in range(len(topics)):
+        data[i].update({"stock": stock})
+        graphs.append(plot(data[i]))
+        names.append(f"{name} / {topics[i]}")
 
     return graphs, names
 
@@ -60,8 +99,8 @@ def handle_blank(data):
     return data.dropna().replace(0, 1)
 
 
-def calc_yoy(data):
-    return (data - data.shift(52)) / data.shift(52) * 100
+def calc_yoy(data, offset):
+    return (data - data.shift(offset)) / data.shift(offset) * 100
 
 
 def get_title(ticker):
@@ -87,7 +126,7 @@ def plot(data):
 
     ax.plot(data["trend"].index, data["trend"], color="mediumslateblue")
     ax.plot(data["trend_ma"].index, data["trend_ma"], color="red")
-    ax.plot(data["record"].index, data["record"], color="black")
+    ax.plot(data["stock"].index, data["stock"], color="black")
 
     ax.set_ylim(0, 100)
     ax.grid(axis='both')

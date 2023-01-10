@@ -28,7 +28,7 @@ DEBUG = False
 ALLOWED_HOSTS = []
 CSRF_TRUSTED_ORIGINS = ['http://trendie.site', 'https://trendie.site']
 
-SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = True
 
 # Application definition

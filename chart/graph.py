@@ -1,10 +1,10 @@
 import base64
 import io
-import pandas as pd
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas_datareader.data as web
+import yfinance as yf
 
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -28,7 +28,9 @@ def fetch_stock_data_normalized(ticker, date_range):
         stock = web.DataReader(ticker[:-3], "naver", *date_range)
         stock = stock.iloc[:, -2].astype("int")
     else:
-        stock = web.DataReader(ticker, "yahoo", *date_range)
+        yf.pdr_override()
+        start, end = date_range
+        stock = web.get_data_yahoo(ticker, start=start, end=end)
         stock = stock.iloc[:, -1]
 
     return (stock - stock.min()) / (stock.max() - stock.min()) * 100

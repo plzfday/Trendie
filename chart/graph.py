@@ -31,7 +31,7 @@ def fetch_stock_data_normalized(ticker, date_range):
         yf.pdr_override()
         start, end = date_range
         stock = web.get_data_yahoo(ticker, start=start, end=end)
-        stock = stock.iloc[:, -1]
+        stock = stock.iloc[:, -2]
 
     return (stock - stock.min()) / (stock.max() - stock.min()) * 100
 

@@ -4,6 +4,7 @@ import io
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas_datareader.data as web
+import pandas as pd
 import yfinance as yf
 
 from datetime import datetime
@@ -38,9 +39,12 @@ def fetch_stock_data_normalized(ticker, date_range):
 
 def fetch_from_google_trend(date_range, topics, duration: str):
     pytrend = TrendReq(timeout=(10, 25))
-    year_ahead = date_range[0] + relativedelta(years=-1)
 
-    tf = format_date(year_ahead, date_range[1])
+    year_ahead = date_range[0] + relativedelta(years=-1)
+    if duration == "5Y":
+        tf = format_date(date_range[0], date_range[1])
+    else:
+        tf = format_date(year_ahead, date_range[1])
 
     yoy_offset = 52
     ma_offset = 10
@@ -51,16 +55,10 @@ def fetch_from_google_trend(date_range, topics, duration: str):
     data = []
 
     for topic in topics:
-        pytrend.build_payload([topic], timeframe=tf, geo='US')
-
         try:
-            trend = handle_blank(pytrend.interest_over_time())
-        except ResponseError:
-            raise RuntimeError("Google returned 429")
-
-        if trend.empty:
-            raise NoDataError(
-                f"Keyword <b>{topic}</b> doesn't have enough data. Use another keyword.")
+            trend = fetch_from_pytrend(pytrend, topic, tf)
+        except Exception as e:
+            raise e
 
         trend_ma = handle_blank(trend.rolling(window=ma_offset).mean())
         trend_ma_yoy = calc_yoy(trend_ma, yoy_offset - ma_offset + 1)
@@ -70,6 +68,21 @@ def fetch_from_google_trend(date_range, topics, duration: str):
                      "trend": trend.iloc[yoy_offset:, 0]})
 
     return data
+
+
+def fetch_from_pytrend(pytrend, topic, timeframe):
+    pytrend.build_payload([topic], timeframe=timeframe, geo='US')
+
+    try:
+        trend = handle_blank(pytrend.interest_over_time())
+    except ResponseError:
+        raise RuntimeError("Google returned 429")
+
+    if trend.empty:
+        raise NoDataError(
+            f"Keyword <b>{topic}</b> doesn't have enough data. Use another keyword.")
+
+    return trend
 
 
 def get_graph(ticker, duration, topics):

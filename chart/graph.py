@@ -60,9 +60,14 @@ def fetch_from_google_trend(date_range, topics, duration: str):
         trend_ma = handle_blank(trend.rolling(window=ma_offset).mean())
         trend_ma_yoy = calc_yoy(trend_ma, yoy_offset - ma_offset + 1)
 
-        data.append({"trend_ma_yoy": trend_ma_yoy.iloc[:, 0],
-                     "trend_ma": trend_ma.iloc[:, 0],
-                     "trend": trend.iloc[:, 0]})
+        if duration == "5Y":
+            data.append({"trend_ma_yoy": trend_ma_yoy.iloc[:, 0],
+                         "trend_ma": trend_ma.iloc[:, 0],
+                         "trend": trend.iloc[:, 0]})
+        else:
+            data.append({"trend_ma_yoy": trend_ma_yoy.iloc[:, 0],
+                         "trend_ma": trend_ma.iloc[yoy_offset - ma_offset + 1:, 0],
+                         "trend": trend.iloc[yoy_offset:, 0]})
 
     return data
 
